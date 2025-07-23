@@ -158,6 +158,135 @@ if uploaded_file:
             st.pyplot(fig)
         else:
             st.info("Not enough numeric columns for correlation heatmap.")
+    
+    
+    def datavizz(d):
+        st.subheader("📊 Advanced Data Visualization")
+
+        plot_group = st.selectbox("Select Plot Category", [
+            "📊 Basic Plots", 
+            "📈 Trend & Comparison", 
+            "🧠 Advanced Distributions", 
+            "🧪 Experimental"
+        ])
+
+        if plot_group == "📊 Basic Plots":
+            plot_type = st.selectbox("Choose Plot Type", [
+                "Histogram", 
+                "Boxplot", 
+                "Countplot (for categorical)", 
+                "Scatterplot",
+                "Pairplot",
+                "Heatmap (Correlation)"
+            ])
+
+            if plot_type == "Histogram":
+                col = st.selectbox("Select column", d.select_dtypes(include=['int64', 'float64']).columns)
+                fig, ax = plt.subplots()
+                sns.histplot(d[col], kde=True, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Boxplot":
+                col = st.selectbox("Select column", d.select_dtypes(include=['int64', 'float64']).columns)
+                fig, ax = plt.subplots()
+                sns.boxplot(data=d, y=col, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Countplot (for categorical)":
+                col = st.selectbox("Select column", d.select_dtypes(include='object').columns)
+                fig, ax = plt.subplots()
+                sns.countplot(data=d, x=col, order=d[col].value_counts().index[:20], ax=ax)
+                plt.xticks(rotation=45)
+                st.pyplot(fig)
+
+            elif plot_type == "Scatterplot":
+                num_cols = d.select_dtypes(include=['int64', 'float64']).columns
+                col1 = st.selectbox("X-axis", num_cols, key='scatter_x')
+                col2 = st.selectbox("Y-axis", num_cols, key='scatter_y')
+                fig, ax = plt.subplots()
+                sns.scatterplot(data=d, x=col1, y=col2, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Pairplot":
+                st.info("⚠️ May be slow for large datasets. Select 2+ columns.")
+                num_cols = d.select_dtypes(include=['int64', 'float64']).columns.tolist()
+                selected_cols = st.multiselect("Select numeric columns", num_cols, default=num_cols[:4])
+                if len(selected_cols) >= 2:
+                    fig = sns.pairplot(d[selected_cols])
+                    st.pyplot(fig)
+                else:
+                    st.warning("Select at least 2 columns for pairplot.")
+
+            elif plot_type == "Heatmap (Correlation)":
+                fig, ax = plt.subplots()
+                sns.heatmap(d.corr(numeric_only=True), annot=True, cmap='coolwarm', ax=ax)
+                st.pyplot(fig)
+
+        elif plot_group == "📈 Trend & Comparison":
+            plot_type = st.selectbox("Choose Plot Type", ["Lineplot", "Barplot"])
+
+            if plot_type == "Lineplot":
+                num_cols = d.select_dtypes(include=['int64', 'float64']).columns
+                x_col = st.selectbox("X-axis", d.columns)
+                y_col = st.selectbox("Y-axis", num_cols)
+                fig, ax = plt.subplots()
+                sns.lineplot(data=d, x=x_col, y=y_col, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Barplot":
+                col = st.selectbox("Select categorical column", d.select_dtypes(include='object').columns)
+                num_col = st.selectbox("Select numeric column", d.select_dtypes(include=['int64', 'float64']).columns)
+                fig, ax = plt.subplots()
+                sns.barplot(data=d, x=col, y=num_col, ax=ax)
+                plt.xticks(rotation=45)
+                st.pyplot(fig)
+
+        elif plot_group == "🧠 Advanced Distributions":
+            plot_type = st.selectbox("Choose Plot Type", ["Violinplot", "Swarmplot", "Stripplot", "Boxenplot"])
+
+            cat_col = st.selectbox("Categorical Column", d.select_dtypes(include='object').columns)
+            num_col = st.selectbox("Numeric Column", d.select_dtypes(include=['int64', 'float64']).columns)
+
+            if plot_type == "Violinplot":
+                fig, ax = plt.subplots()
+                sns.violinplot(data=d, x=cat_col, y=num_col, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Swarmplot":
+                fig, ax = plt.subplots()
+                sns.swarmplot(data=d, x=cat_col, y=num_col, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Stripplot":
+                fig, ax = plt.subplots()
+                sns.stripplot(data=d, x=cat_col, y=num_col, ax=ax)
+                st.pyplot(fig)
+
+            elif plot_type == "Boxenplot":
+                fig, ax = plt.subplots()
+                sns.boxenplot(data=d, x=cat_col, y=num_col, ax=ax)
+                st.pyplot(fig)
+
+        elif plot_group == "🧪 Experimental":
+            plot_type = st.selectbox("Choose Plot Type", ["Treemap", "Andrews Curves"])
+
+            if plot_type == "Treemap":
+                import squarify
+                col = st.selectbox("Column for Treemap", d.select_dtypes(include='object').columns)
+                counts = d[col].value_counts()
+                fig = plt.figure()
+                squarify.plot(sizes=counts.values, label=counts.index, alpha=0.8)
+                plt.axis('off')
+                st.pyplot(fig)
+
+            elif plot_type == "Andrews Curves":
+                from pandas.plotting import andrews_curves
+                target = st.selectbox("Target column (categorical)", d.select_dtypes(include='object').columns)
+                fig, ax = plt.subplots()
+                andrews_curves(d, target=target, ax=ax)
+                st.pyplot(fig)
+
+    datavizz(df)
 
 else:
     st.info("👈 Upload a dataset from the sidebar to start analysis.")
